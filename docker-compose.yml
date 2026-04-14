@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # ─── innerlog-service (Express.js + TypeScript) ───
+  innerlog-service:
+    build: ./innerlog-service
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      - mongodb
+      - redis
+    restart: unless-stopped
+
+  # ─── innerlog-ai-engine (Python AI) ───
+  innerlog-ai-engine:
+    build: ./innerlog-ai-engine
+    ports:
+      - "5000:5000"
+    env_file: .env
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  # ─── innerlog-ui (Angular 21 + Nginx) ───
+  innerlog-ui:
+    build: ./innerlog-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - innerlog-service
+    restart: unless-stopped
+
+  # ─── innerlog-mobile: Flutter app (build locally, not in Docker) ───
+  # Run: cd innerlog-mobile && flutter run
+
+  # ─── MongoDB ───
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  # ─── Redis ───
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  mongodata:
+  redisdata:

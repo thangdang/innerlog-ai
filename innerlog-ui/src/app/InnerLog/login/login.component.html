@@ -1,0 +1,24 @@
+<div class="h-100 bg-plum-plate bg-animation">
+  <div class="d-flex h-100 justify-content-center align-items-center">
+    <div class="mx-auto app-login-box col-md-4">
+      <div class="app-logo-inverse mx-auto mb-3"></div>
+      <div class="modal-dialog w-100 mx-auto">
+        <div class="modal-content">
+          <div class="modal-body">
+            <h5 class="modal-title mb-3"><span>InnerLog AI</span> — Admin Login</h5>
+            <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+            <div class="mb-3">
+              <input type="email" class="form-control" placeholder="Email" [(ngModel)]="email">
+            </div>
+            <div class="mb-3">
+              <input type="password" class="form-control" placeholder="Mật khẩu" [(ngModel)]="password">
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary btn-lg" (click)="login()">Đăng nhập</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

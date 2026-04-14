@@ -1,0 +1,31 @@
+<div class="app-page-title">
+  <div class="page-title-wrapper">
+    <div class="page-title-heading">
+      <div class="page-title-icon"><i class="fa fa-calendar-check-o icon-gradient bg-sunny-morning"></i></div>
+      <div>Check-ins <div class="page-title-subheading">Dữ liệu check-in hàng ngày</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main-card mb-3 card">
+  <div class="card-body">
+    <table class="table table-hover table-striped">
+      <thead>
+        <tr>
+          <th>Ngày</th>
+          <th>Mood</th>
+          <th>Energy</th>
+          <th>Ghi chú</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of checkins">
+          <td>{{ c.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ moodEmoji(c.mood_score) }} {{ c.mood_score }}/5</td>
+          <td><span class="badge" [ngClass]="{'bg-danger': c.energy_level === 'low', 'bg-warning': c.energy_level === 'normal', 'bg-success': c.energy_level === 'high'}">{{ c.energy_level }}</span></td>
+          <td>{{ c.text_note || '—' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

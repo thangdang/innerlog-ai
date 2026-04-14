@@ -1,0 +1,36 @@
+<div class="app-page-title">
+  <div class="page-title-wrapper">
+    <div class="page-title-heading">
+      <div class="page-title-icon"><i class="fa fa-users icon-gradient bg-happy-itmeo"></i></div>
+      <div>Quản lý Users <div class="page-title-subheading">Danh sách người dùng InnerLog</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main-card mb-3 card">
+  <div class="card-body">
+    <table class="table table-hover table-striped">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Tên</th>
+          <th>Plan</th>
+          <th>Ngày tạo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of users">
+          <td>{{ u.email }}</td>
+          <td>{{ u.display_name || '—' }}</td>
+          <td><span class="badge" [ngClass]="u.plan === 'premium' ? 'bg-success' : 'bg-secondary'">{{ u.plan }}</span></td>
+          <td>{{ u.created_at | date:'dd/MM/yyyy' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="d-flex justify-content-between mt-3">
+      <button class="btn btn-outline-primary btn-sm" (click)="prevPage()" [disabled]="page <= 1">← Trước</button>
+      <span>Trang {{ page }} — Tổng {{ total }} users</span>
+      <button class="btn btn-outline-primary btn-sm" (click)="nextPage()">Sau →</button>
+    </div>
+  </div>
+</div>

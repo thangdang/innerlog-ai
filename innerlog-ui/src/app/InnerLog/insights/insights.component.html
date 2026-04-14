@@ -1,0 +1,28 @@
+<div class="app-page-title">
+  <div class="page-title-wrapper">
+    <div class="page-title-heading">
+      <div class="page-title-icon"><i class="fa fa-lightbulb-o icon-gradient bg-tempting-azure"></i></div>
+      <div>Insights <div class="page-title-subheading">Lịch sử AI Insight</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6" *ngFor="let insight of insights">
+    <div class="card mb-3">
+      <div class="card-header">
+        {{ insight.period }} — {{ insight.created_at | date:'dd/MM/yyyy' }}
+      </div>
+      <div class="card-body">
+        <ul>
+          <li *ngFor="let b of insight.bullets">{{ b }}</li>
+        </ul>
+        <div class="mt-2" *ngIf="insight.meta">
+          <span class="badge bg-info me-1">Mood: {{ insight.meta.avg_mood }}/5</span>
+          <span class="badge bg-warning me-1">Trend: {{ insight.meta.mood_trend }}</span>
+          <span class="badge bg-danger me-1">Stress: {{ insight.meta.stress_level }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
