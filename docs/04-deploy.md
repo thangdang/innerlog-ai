@@ -5,6 +5,7 @@
 2. [Deploy Mobile lên App Store / Google Play](#2-deploy-mobile)
 3. [CI/CD Pipeline](#3-cicd-pipeline)
 4. [Monitoring & Maintenance](#4-monitoring)
+5. [Chi phí Deploy (Cost Estimation)](#5-chi-phí-deploy-cost-estimation)
 
 ---
 
@@ -506,6 +507,62 @@ free -h
 # Check Docker resource usage
 docker stats
 ```
+
+---
+
+## 5. Chi phí Deploy (Cost Estimation)
+
+### 5.1 Tổng quan hạ tầng
+
+InnerLog AI gồm 5 containers: innerlog-service (Express.js), innerlog-ai-engine (FastAPI + scikit-learn + sentence-transformers + Ollama), innerlog-ui (Angular + Nginx), MongoDB 7, Redis 7. AI chạy local hoàn toàn — không tốn phí API.
+
+### 5.2 Option A — VPS đơn giản (MVP, < 1,000 users)
+
+| Hạng mục | Dịch vụ | Chi phí/tháng |
+|----------|---------|---------------|
+| VPS (4 vCPU, 8GB RAM, 80GB SSD) | DigitalOcean / Vultr / Linode | $48 (~1,200,000đ) |
+| Domain `.vn` | VNNIC | ~30,000đ/tháng |
+| SSL Certificate | Let's Encrypt | **Miễn phí** |
+| Ollama LLM (LLaMA 3.1 8B) | Chạy local trên VPS | **Miễn phí** |
+| sentence-transformers | Chạy local trên VPS | **Miễn phí** |
+| MongoDB 7 + Redis 7 | Docker trên VPS | **Miễn phí** |
+| Docker Hub (public repo) | Docker Hub Free | **Miễn phí** |
+| GitHub Actions CI/CD | GitHub Free (2,000 min/tháng) | **Miễn phí** |
+| **Tổng Option A** | | **~$50/tháng (~1,250,000đ)** |
+
+> VPS 2 vCPU / 4GB ($24/tháng) cũng chạy được nhưng Ollama + sentence-transformers sẽ chậm. Nên bật swap 4GB.
+
+### 5.3 Option B — VPS nâng cao (1,000–10,000 users)
+
+| Hạng mục | Dịch vụ | Chi phí/tháng |
+|----------|---------|---------------|
+| VPS chính (8 vCPU, 16GB RAM, 160GB SSD) | DigitalOcean Premium | $96 (~2,400,000đ) |
+| Managed MongoDB (tùy chọn) | MongoDB Atlas M10 | $57 (~1,425,000đ) |
+| Backup storage (S3-compatible) | DigitalOcean Spaces 250GB | $5 (~125,000đ) |
+| Domain + SSL | VNNIC + Let's Encrypt | ~30,000đ/tháng |
+| **Tổng Option B** | | **~$100–$160/tháng (~2,500,000–4,000,000đ)** |
+
+### 5.4 Chi phí Mobile App
+
+| Hạng mục | Chi phí | Ghi chú |
+|----------|---------|---------|
+| Google Play Developer | $25 (một lần) | Lifetime |
+| Apple Developer Program | $99/năm | Bắt buộc cho iOS |
+| Codemagic CI/CD (build iOS) | **Miễn phí** | Free tier: 500 min/tháng |
+| **Tổng Mobile/năm** | **~$124 năm đầu, $99/năm sau** | |
+
+### 5.5 Tổng hợp so sánh
+
+| | Option A (MVP) | Option B (Growth) |
+|---|---|---|
+| Users | < 1,000 | 1,000–10,000 |
+| Chi phí/tháng | ~$50 | ~$100–$160 |
+| Chi phí/năm | ~$600 | ~$1,200–$1,920 |
+| VNĐ/tháng | ~1,250,000đ | ~2,500,000–4,000,000đ |
+| HA (High Availability) | ❌ | ⚠️ Tùy chọn |
+| Managed DB | ❌ | ⚠️ Tùy chọn |
+
+> Điểm mạnh: toàn bộ AI stack (Ollama + scikit-learn + sentence-transformers) chạy local, **$0 chi phí API**. Dữ liệu sức khỏe tinh thần không gửi ra bên ngoài — phù hợp GDPR.
 
 ---
 
