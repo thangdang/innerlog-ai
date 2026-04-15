@@ -23,21 +23,44 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
       res.status(400).json({ error: 'No check-ins found for this period' }); return;
     }
 
-    // Call AI engine
-    const aiResponse = await axios.post(`${config.aiServiceUrl}/ai/analyze`, {
-      checkins: checkins.map(c => ({
-        mood_score: c.mood_score,
-        energy_level: c.energy_level,
-        text_note: c.text_note || '',
-        created_at: c.created_at,
-      })),
-    });
+    // Call AI engine (with fallback if offline)
+    let aiData: any;
+    try {
+      const aiResponse = await axios.post(`${config.aiServiceUrl}/ai/analyze`, {
+        checkins: checkins.map(c => ({
+          mood_score: c.mood_score,
+          energy_level: c.energy_level,
+          text_note: c.text_note || '',
+          created_at: c.created_at,
+        })),
+      }, { timeout: 15000 });
+      aiData = aiResponse.data;
+    } catch (err: any) {
+      // Fallback: basic local analysis when AI engine is offline
+      const moods = checkins.map(c => c.mood_score);
+      const avgMood = moods.reduce((a, b) => a + b, 0) / moods.length;
+      const moodLabel = avgMood >= 3.5 ? 'tích cực' : avgMood >= 2.5 ? 'trung bình' : 'thấp';
+      aiData = {
+        bullets: [
+          `Tâm trạng trung bình: ${moodLabel} (${avgMood.toFixed(1)}/5).`,
+          `Dựa trên ${checkins.length} check-in trong ${days} ngày.`,
+          '⚠️ Phân tích chi tiết tạm thời không khả dụng (AI engine offline).',
+        ],
+        metrics: {
+          avg_mood: Math.round(avgMood * 100) / 100,
+          mood_trend: 'unknown',
+          stress_level: 'unknown',
+          top_topics: [],
+          positive_score: 0,
+        },
+      };
+    }
 
     const insight = new Insight({
       user_id: req.userId,
       period,
-      bullets: aiResponse.data.bullets,
-      meta: aiResponse.data.metrics,
+      bullets: aiData.bullets,
+      meta: aiData.metrics,
     });
     await insight.save();
     res.status(201).json(insight);

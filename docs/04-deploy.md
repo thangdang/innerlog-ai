@@ -7,6 +7,8 @@
 4. [Monitoring & Maintenance](#4-monitoring)
 5. [Chi phí Deploy (Cost Estimation)](#5-chi-phí-deploy-cost-estimation)
 
+> Xem thêm: [Hybrid Network Diagram](./05-hybrid-network.md)
+
 ---
 
 ## 1. Deploy lên VPS (Ubuntu)
@@ -532,7 +534,45 @@ InnerLog AI gồm 5 containers: innerlog-service (Express.js), innerlog-ai-engin
 
 > VPS 2 vCPU / 4GB ($24/tháng) cũng chạy được nhưng Ollama + sentence-transformers sẽ chậm. Nên bật swap 4GB.
 
-### 5.3 Option B — VPS nâng cao (1,000–10,000 users)
+### 5.3 Option B — Hybrid: Local PC (AI) + VPS $24 ⭐ RECOMMENDED
+
+Chạy AI engine trên máy cá nhân (Windows 11, 16GB RAM), phần còn lại trên VPS rẻ. Khi PC offline, insight/coach có local fallback (basic analysis).
+
+**Phân chia workload:**
+
+| Chạy ở đâu | Services | RAM cần |
+|-------------|----------|---------|
+| **Local PC** (Win 11, 16GB) | innerlog-ai-engine (sentiment + clustering + Ollama insight) | ~5–6 GB |
+| **VPS $24** (2 vCPU, 4GB) | innerlog-service + innerlog-ui + MongoDB + Redis | ~2–2.5 GB |
+
+**Chi phí:**
+
+| Hạng mục | Dịch vụ | Chi phí/tháng |
+|----------|---------|---------------|
+| VPS (2 vCPU, 4GB RAM, 80GB SSD) | DigitalOcean Basic | **$24 (~600,000đ)** |
+| Domain `.vn` | VNNIC | ~30,000đ/tháng |
+| SSL | Let's Encrypt | **Miễn phí** |
+| Ollama + sentence-transformers + scikit-learn | Chạy trên PC | **Miễn phí** |
+| **Tổng Option B** | | **~$26/tháng (~650,000đ)** |
+
+**Graceful degradation khi PC offline:**
+
+| Endpoint | Khi PC online | Khi PC offline (fallback) |
+|----------|---------------|---------------------------|
+| `POST /insights/generate` | Full AI: sentiment + clustering + Ollama insight | Basic: avg mood + trend label + "AI offline" disclaimer |
+| `POST /coach/check` | Full: 5 pattern detectors (mood drop, stress, energy, missed, burnout) | Basic: mood drop + stress spike detection (local JS) |
+| Check-in CRUD | ✅ Luôn hoạt động | ✅ Luôn hoạt động |
+| Goals CRUD | ✅ Luôn hoạt động | ✅ Luôn hoạt động |
+| Streak tracking | ✅ Luôn hoạt động | ✅ Luôn hoạt động |
+
+> InnerLog AI không cần real-time AI response — insights được generate theo yêu cầu (weekly), coach check chạy background. Fallback local đủ tốt cho MVP.
+
+**Code đã implement:**
+- `insights.ts` — try/catch với local fallback: tính avg mood + trend + basic bullets
+- `coach.ts` — try/catch với local fallback: mood drop + stress spike detection bằng JS
+- Không cần Groq/Gemini fallback vì AI engine chủ yếu rule-based (không phụ thuộc LLM nặng)
+
+### 5.4 Option C — VPS nâng cao (1,000–10,000 users)
 
 | Hạng mục | Dịch vụ | Chi phí/tháng |
 |----------|---------|---------------|
@@ -553,14 +593,14 @@ InnerLog AI gồm 5 containers: innerlog-service (Express.js), innerlog-ai-engin
 
 ### 5.5 Tổng hợp so sánh
 
-| | Option A (MVP) | Option B (Growth) |
-|---|---|---|
-| Users | < 1,000 | 1,000–10,000 |
-| Chi phí/tháng | ~$50 | ~$100–$160 |
-| Chi phí/năm | ~$600 | ~$1,200–$1,920 |
-| VNĐ/tháng | ~1,250,000đ | ~2,500,000–4,000,000đ |
-| HA (High Availability) | ❌ | ⚠️ Tùy chọn |
-| Managed DB | ❌ | ⚠️ Tùy chọn |
+| | Option A (All VPS) | Option B (Hybrid) ⭐ | Option C (Growth) |
+|---|---|---|---|
+| Users | < 1,000 | < 1,000 | 1,000–10,000 |
+| Chi phí/tháng | ~$50 | **~$26** | ~$100–$160 |
+| VPS cần | 8GB RAM | **4GB RAM ($24)** | 16GB RAM |
+| AI quality | Full | Full (basic fallback khi PC tắt) | Full |
+| GDPR (data local) | ✅ | ✅ (AI trên PC, không gửi ra ngoài) | ✅ |
+| 24/7 AI | ✅ | ⚠️ Basic fallback | ✅ |
 
 > Điểm mạnh: toàn bộ AI stack (Ollama + scikit-learn + sentence-transformers) chạy local, **$0 chi phí API**. Dữ liệu sức khỏe tinh thần không gửi ra bên ngoài — phù hợp GDPR.
 
