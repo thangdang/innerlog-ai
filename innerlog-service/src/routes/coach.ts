@@ -3,8 +3,10 @@ import axios from 'axios';
 import { Checkin, Notification } from '../models';
 import { config } from '../config';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { getCached, setCache } from '../services/cache';
 
 const router = Router();
+const COACH_CACHE_TTL = 60 * 60; // 1h — coach patterns change with new checkins
 
 // POST /api/v1/coach/check — run silent coach analysis
 router.post('/check', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -18,6 +20,14 @@ router.post('/check', authMiddleware, async (req: AuthRequest, res: Response) =>
 
     if (checkins.length < 3) {
       res.json({ alerts: [], should_notify: false, message: 'Not enough data' }); return;
+    }
+
+    // Cache key: userId + checkin count
+    const cacheKey = `${req.userId}:${checkins.length}`;
+    const cached = await getCached<any>('coach', cacheKey);
+    if (cached) {
+      res.json({ ...cached, cached: true });
+      return;
     }
 
     let aiData: any;
@@ -67,6 +77,9 @@ router.post('/check', authMiddleware, async (req: AuthRequest, res: Response) =>
     }
 
     res.json(aiData);
+
+    // Cache the result (1h)
+    await setCache('coach', cacheKey, aiData, COACH_CACHE_TTL);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

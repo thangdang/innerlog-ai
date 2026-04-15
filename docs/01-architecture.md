@@ -174,3 +174,25 @@ notifications {
 - Không social feed, không public data
 - AI chạy local (Ollama), không gửi data ra ngoài
 - GDPR: export data + hard delete account
+
+## Hybrid Deployment (Primary Target)
+
+Kiến trúc hybrid cho giai đoạn MVP — AI engine chạy trên Local PC, services trên VPS $24.
+
+- **VPS ($24/mo)**: innerlog-service + innerlog-ui + MongoDB + Redis
+- **Local PC (16GB)**: innerlog-ai-engine (sentiment + clustering + Ollama)
+- **Kết nối**: Cloudflare Tunnel (HTTPS)
+- **Fallback**: PC offline → local JS fallback (basic mood analysis + pattern detection)
+- **Cache**: Redis cache cho insight (6h), coach (1h) — tránh gọi AI lặp lại
+- **GDPR**: AI chạy trên PC cá nhân → dữ liệu sức khỏe tinh thần không gửi qua cloud LLM
+- **Chi phí**: ~$26/tháng (~650,000đ)
+
+Xem chi tiết: [Deploy Guide](./04-deploy.md) | [Network Diagram](./05-hybrid-network.md)
+
+### Code Files (Hybrid)
+
+| File | Purpose |
+|------|---------|
+| `src/services/cache.ts` | Redis cache (insight 6h, coach 1h) |
+| `src/routes/insights.ts` | Cache check + local JS fallback |
+| `src/routes/coach.ts` | Cache check + local JS fallback |

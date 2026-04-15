@@ -3,8 +3,10 @@ import axios from 'axios';
 import { Checkin, Insight } from '../models';
 import { config } from '../config';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { getCached, setCache } from '../services/cache';
 
 const router = Router();
+const INSIGHT_CACHE_TTL = 6 * 60 * 60; // 6h — weekly data, regenerate daily at most
 
 // POST /api/v1/insights/generate
 router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response) => {
@@ -21,6 +23,21 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
 
     if (checkins.length === 0) {
       res.status(400).json({ error: 'No check-ins found for this period' }); return;
+    }
+
+    // Cache key: userId + period + checkin count (changes when new checkins added)
+    const cacheKey = `${req.userId}:${period}:${checkins.length}`;
+    const cached = await getCached<any>('insight', cacheKey);
+    if (cached) {
+      const insight = new Insight({
+        user_id: req.userId,
+        period,
+        bullets: cached.bullets,
+        meta: cached.metrics,
+      });
+      await insight.save();
+      res.status(201).json({ ...insight.toObject(), cached: true });
+      return;
     }
 
     // Call AI engine (with fallback if offline)
@@ -63,6 +80,10 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
       meta: aiData.metrics,
     });
     await insight.save();
+
+    // Cache the AI result (6h)
+    await setCache('insight', cacheKey, aiData, INSIGHT_CACHE_TTL);
+
     res.status(201).json(insight);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

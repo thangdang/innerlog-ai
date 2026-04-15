@@ -2,7 +2,12 @@
 
 ## 1. Tổng quan
 
-Hybrid deployment: AI engine (sentiment analysis + topic clustering + Ollama insight + pattern detection) chạy trên Local PC. Backend + UI + DB chạy trên VPS $24. Khi PC offline, insight/coach có local JS fallback (basic analysis).
+Hybrid deployment với cache + fallback:
+- **AI engine** (sentiment + clustering + Ollama insight + pattern detection) chạy trên Local PC
+- **Backend + UI + DB** chạy trên VPS $24
+- **Redis cache**: insight (6h), coach (1h) — tránh gọi AI lặp lại
+- **Fallback**: PC offline → local JS fallback (basic mood analysis + pattern detection)
+- **GDPR**: AI chạy trên PC cá nhân → dữ liệu sức khỏe tinh thần không gửi qua cloud LLM
 
 ## 2. Network Diagram
 

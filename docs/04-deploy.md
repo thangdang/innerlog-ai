@@ -572,6 +572,107 @@ Chạy AI engine trên máy cá nhân (Windows 11, 16GB RAM), phần còn lại 
 - `coach.ts` — try/catch với local fallback: mood drop + stress spike detection bằng JS
 - Không cần Groq/Gemini fallback vì AI engine chủ yếu rule-based (không phụ thuộc LLM nặng)
 
+**Cách setup Hybrid:**
+
+**Bước 1: Trên Local PC (Windows 11)**
+
+```powershell
+# Cài Ollama
+# Download từ https://ollama.com/download/windows
+ollama pull llama3.1:8b
+
+# Chạy innerlog-ai-engine
+cd innerlog-ai\innerlog-ai-engine
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+
+# Start AI service
+$env:OLLAMA_URL = "http://localhost:11434"
+$env:OLLAMA_MODEL = "llama3.1:8b"
+uvicorn app.main:app --host 0.0.0.0 --port 5000
+```
+
+**Bước 2: Expose AI service (Cloudflare Tunnel)**
+
+```powershell
+# Cài cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+cloudflared tunnel --url http://localhost:5000
+# → Nhận URL dạng: https://xxx-yyy-zzz.trycloudflare.com
+```
+
+**Bước 3: Trên VPS DigitalOcean**
+
+```bash
+git clone <repo> innerlog-ai && cd innerlog-ai
+cp .env.example .env
+```
+
+Sửa `.env`:
+
+```env
+PORT=3000
+NODE_ENV=production
+MONGODB_URI=mongodb://mongodb:27017/innerlog_ai
+REDIS_URL=redis://redis:6379
+
+# ═══ TRỎ VỀ LOCAL PC ═══
+AI_SERVICE_URL=https://xxx-yyy-zzz.trycloudflare.com
+
+JWT_SECRET=<openssl rand -hex 32>
+JWT_REFRESH_SECRET=<openssl rand -hex 32>
+```
+
+Sửa `docker-compose.yml` — bỏ innerlog-ai-engine:
+
+```yaml
+services:
+  innerlog-service:
+    build: ./innerlog-service
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      - mongodb
+      - redis
+    restart: unless-stopped
+
+  # ❌ BỎ innerlog-ai-engine — chạy trên local PC
+  # innerlog-ai-engine:
+  #   build: ./innerlog-ai-engine
+  #   ...
+
+  innerlog-ui:
+    build: ./innerlog-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - innerlog-service
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+volumes:
+  mongodata:
+  redisdata:
+```
+
+```bash
+docker compose up -d --build
+```
+
 ### 5.4 Option C — VPS nâng cao (1,000–10,000 users)
 
 | Hạng mục | Dịch vụ | Chi phí/tháng |
@@ -580,9 +681,9 @@ Chạy AI engine trên máy cá nhân (Windows 11, 16GB RAM), phần còn lại 
 | Managed MongoDB (tùy chọn) | MongoDB Atlas M10 | $57 (~1,425,000đ) |
 | Backup storage (S3-compatible) | DigitalOcean Spaces 250GB | $5 (~125,000đ) |
 | Domain + SSL | VNNIC + Let's Encrypt | ~30,000đ/tháng |
-| **Tổng Option B** | | **~$100–$160/tháng (~2,500,000–4,000,000đ)** |
+| **Tổng Option C** | | **~$100–$160/tháng (~2,500,000–4,000,000đ)** |
 
-### 5.4 Chi phí Mobile App
+### 5.5 Chi phí Mobile App
 
 | Hạng mục | Chi phí | Ghi chú |
 |----------|---------|---------|
@@ -591,7 +692,7 @@ Chạy AI engine trên máy cá nhân (Windows 11, 16GB RAM), phần còn lại 
 | Codemagic CI/CD (build iOS) | **Miễn phí** | Free tier: 500 min/tháng |
 | **Tổng Mobile/năm** | **~$124 năm đầu, $99/năm sau** | |
 
-### 5.5 Tổng hợp so sánh
+### 5.6 Tổng hợp so sánh
 
 | | Option A (All VPS) | Option B (Hybrid) ⭐ | Option C (Growth) |
 |---|---|---|---|
