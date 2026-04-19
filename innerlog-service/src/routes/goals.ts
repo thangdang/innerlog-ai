@@ -1,11 +1,18 @@
 import { Router, Response } from 'express';
+import { body } from 'express-validator';
 import { Goal } from '../models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 
 // POST /api/v1/goals
-router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/',
+  authMiddleware,
+  body('title').notEmpty().isLength({ max: 200 }).withMessage('Tên mục tiêu không hợp lệ'),
+  body('category').optional().isIn(['study', 'work', 'health', 'finance', 'other']),
+  validate,
+  async (req: AuthRequest, res: Response) => {
   try {
     const { title, category, tasks } = req.body;
     const goal = new Goal({ user_id: req.userId, title, category, tasks });

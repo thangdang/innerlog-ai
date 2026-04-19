@@ -7,6 +7,7 @@
   </div>
 </div>
 
+<!-- KPI Cards -->
 <div class="row" *ngIf="!loading">
   <div class="col-md-6 col-xl-3">
     <div class="card mb-3 widget-content bg-midnight-bloom">
@@ -19,7 +20,7 @@
   <div class="col-md-6 col-xl-3">
     <div class="card mb-3 widget-content bg-arielle-smile">
       <div class="widget-content-wrapper text-white">
-        <div class="widget-content-left"><div class="widget-heading">Premium Users</div><div class="widget-subheading">{{ stats.premiumUsers }} trả phí</div></div>
+        <div class="widget-content-left"><div class="widget-heading">Active Users</div><div class="widget-subheading">{{ stats.premiumUsers }} premium</div></div>
         <div class="widget-content-right"><div class="widget-numbers text-white"><span>{{ stats.activeUsers }}</span></div></div>
       </div>
     </div>
@@ -42,6 +43,42 @@
   </div>
 </div>
 
+<!-- Chart + Streaks Row -->
+<div class="row" *ngIf="!loading">
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header">📈 Hoạt động 30 ngày</div>
+      <div class="card-body" style="height: 300px;">
+        <canvas baseChart
+          [type]="'line'"
+          [data]="chartData"
+          [options]="chartOptions">
+        </canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header">🔥 Top Streaks</div>
+      <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+          <tbody>
+            <tr *ngFor="let s of streaks; let i = index">
+              <td class="ps-3">{{ i + 1 }}.</td>
+              <td>{{ s.user_id?.display_name || s.user_id?.email || '—' }}</td>
+              <td class="text-end pe-3"><strong>🔥 {{ s.current_streak }}</strong></td>
+            </tr>
+            <tr *ngIf="streaks.length === 0">
+              <td colspan="3" class="text-center text-muted py-3">Chưa có dữ liệu</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
 <div class="row" *ngIf="!loading">
   <div class="col-md-4">
     <div class="card mb-3">

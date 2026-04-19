@@ -1,11 +1,11 @@
 import { Router, Response } from 'express';
 import { User, Checkin, Insight, Goal, Streak } from '../models';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { authMiddleware, requireAdmin, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
 // GET /api/v1/dashboard — admin overview
-router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalCheckins = await Checkin.countDocuments();
@@ -54,7 +54,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 });
 
 // GET /api/v1/dashboard/users — user list for admin
-router.get('/users', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/users', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const { page = '1', limit = '20', plan } = req.query;
     const filter: any = {};
@@ -71,7 +71,7 @@ router.get('/users', authMiddleware, async (req: AuthRequest, res: Response) => 
 });
 
 // GET /api/v1/dashboard/chart — daily signups & checkins for last 30 days
-router.get('/chart', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/chart', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const days = parseInt(req.query.days as string) || 30;
     const since = new Date();
@@ -112,7 +112,7 @@ router.get('/chart', authMiddleware, async (req: AuthRequest, res: Response) => 
 });
 
 // GET /api/v1/dashboard/streaks — top streaks leaderboard
-router.get('/streaks', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/streaks', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
     const streaks = await Streak.find()
       .sort({ current_streak: -1 })

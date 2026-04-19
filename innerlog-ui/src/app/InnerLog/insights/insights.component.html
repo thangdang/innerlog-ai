@@ -7,22 +7,55 @@
   </div>
 </div>
 
-<div class="row">
+<!-- Generate Insight -->
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Khoảng thời gian</label>
+        <select class="form-select" [(ngModel)]="selectedPeriod">
+          <option value="7d">7 ngày</option>
+          <option value="30d">30 ngày</option>
+          <option value="60d">60 ngày</option>
+          <option value="90d">90 ngày</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary" (click)="generateInsight()" [disabled]="generating">
+          <span *ngIf="generating" class="spinner-border spinner-border-sm me-1"></span>
+          {{ generating ? 'Đang tạo...' : '✨ Tạo Insight' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div *ngIf="loading" class="text-center py-4">
+  <div class="spinner-border text-primary" role="status"></div>
+</div>
+
+<!-- Insight Cards -->
+<div class="row" *ngIf="!loading">
   <div class="col-md-6" *ngFor="let insight of insights">
     <div class="card mb-3">
-      <div class="card-header">
-        {{ insight.period }} — {{ insight.created_at | date:'dd/MM/yyyy' }}
+      <div class="card-header d-flex justify-content-between">
+        <span><strong>{{ insight.period }}</strong> — {{ insight.created_at | date:'dd/MM/yyyy' }}</span>
+        <span *ngIf="insight.meta" class="badge bg-info">Mood: {{ insight.meta.avg_mood }}/5</span>
       </div>
       <div class="card-body">
-        <ul>
+        <ul class="mb-2">
           <li *ngFor="let b of insight.bullets">{{ b }}</li>
         </ul>
-        <div class="mt-2" *ngIf="insight.meta">
-          <span class="badge bg-info me-1">Mood: {{ insight.meta.avg_mood }}/5</span>
+        <div *ngIf="insight.meta">
           <span class="badge bg-warning me-1">Trend: {{ insight.meta.mood_trend }}</span>
           <span class="badge bg-danger me-1">Stress: {{ insight.meta.stress_level }}</span>
+          <span class="badge bg-success me-1" *ngIf="insight.meta.positive_score">Positive: {{ insight.meta.positive_score }}%</span>
         </div>
       </div>
     </div>
+  </div>
+  <div class="col-12 text-center text-muted py-4" *ngIf="insights.length === 0">
+    Chưa có insight nào. Hãy tạo insight đầu tiên!
   </div>
 </div>

@@ -1,15 +1,21 @@
 import { Router, Response } from 'express';
 import axios from 'axios';
+import { body } from 'express-validator';
 import { Checkin, Insight } from '../models';
 import { config } from '../config';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { getCached, setCache } from '../services/cache';
 
 const router = Router();
 const INSIGHT_CACHE_TTL = 6 * 60 * 60; // 6h — weekly data, regenerate daily at most
 
 // POST /api/v1/insights/generate
-router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/generate',
+  authMiddleware,
+  body('period').optional().isIn(['7d', '30d', '60d', '90d']).withMessage('Period phải là 7d/30d/60d/90d'),
+  validate,
+  async (req: AuthRequest, res: Response) => {
   try {
     const { period = '7d' } = req.body;
     const days = parseInt(period) || 7;

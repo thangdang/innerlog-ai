@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { NgChartsModule } from 'ng2-charts';
 
 import { DashboardComponent } from './InnerLog/dashboard/dashboard.component';
 import { UsersComponent } from './InnerLog/users/users.component';
@@ -18,7 +19,7 @@ import { LoginComponent } from './InnerLog/login/login.component';
     GoalsComponent,
     LoginComponent,
   ],
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgChartsModule],
   exports: [
     DashboardComponent,
     UsersComponent,

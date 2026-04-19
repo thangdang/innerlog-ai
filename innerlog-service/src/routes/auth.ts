@@ -1,20 +1,27 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { body } from 'express-validator';
 import { User } from '../models';
 import { config } from '../config';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 
-function generateTokens(userId: string) {
-  const token = jwt.sign({ id: userId, role: 'user' }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+function generateTokens(userId: string, role: string = 'user') {
+  const token = jwt.sign({ id: userId, role }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
   const refreshToken = jwt.sign({ id: userId }, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
   return { token, refreshToken };
 }
 
 // POST /api/v1/auth/register
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register',
+  body('email').isEmail().withMessage('Email không hợp lệ'),
+  body('password').isLength({ min: 6 }).withMessage('Mật khẩu tối thiểu 6 ký tự'),
+  body('display_name').optional().isString().trim(),
+  validate,
+  async (req: Request, res: Response) => {
   try {
     const { email, password, display_name } = req.body;
     const exists = await User.findOne({ email });
@@ -22,7 +29,7 @@ router.post('/register', async (req: Request, res: Response) => {
 
     const user = new User({ email, password_hash: password, display_name });
     await user.save();
-    const tokens = generateTokens(user._id as string);
+    const tokens = generateTokens(user._id as string, user.role || 'user');
     res.status(201).json({ user, ...tokens });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -30,14 +37,18 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // POST /api/v1/auth/login
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login',
+  body('email').isEmail().withMessage('Email không hợp lệ'),
+  body('password').notEmpty().withMessage('Vui lòng nhập mật khẩu'),
+  validate,
+  async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select('+password_hash');
     if (!user || !(await user.comparePassword(password))) {
       res.status(401).json({ error: 'Invalid credentials' }); return;
     }
-    const tokens = generateTokens(user._id as string);
+    const tokens = generateTokens(user._id as string, user.role || 'user');
     res.json({ user, ...tokens });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -70,7 +81,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
 // PUT /api/v1/auth/profile — update profile
 router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const allowed = ['display_name', 'avatar', 'age', 'gender', 'timezone', 'language', 'reminder_enabled', 'reminder_time'];
+    const allowed = ['display_name', 'avatar', 'age', 'gender', 'timezone', 'language', 'reminder_enabled', 'reminder_time', 'theme', 'notify_coach', 'notify_reminder', 'notify_insight'];
     const updates: any = {};
     for (const key of allowed) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];

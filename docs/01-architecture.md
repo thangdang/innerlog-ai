@@ -60,9 +60,9 @@ InnerLog AI là ứng dụng theo dõi sức khỏe tinh thần cá nhân, sử 
 | `/api/v1/checkins/*` | CRUD check-in, streak, heatmap, stats/trends |
 | `/api/v1/insights/*` | Generate AI insight, latest, history, compare |
 | `/api/v1/goals/*` | CRUD goals, toggle micro-task, add task |
-| `/api/v1/coach/*` | Silent Coach — gọi AI engine phát hiện pattern |
+| `/api/v1/coach/*` | Silent Coach — gọi AI engine phát hiện pattern (cache 1h, fallback local JS) |
 | `/api/v1/notifications/*` | List, mark read, mark all read |
-| `/api/v1/dashboard/*` | Admin overview, user list, chart data, top streaks |
+| `/api/v1/dashboard/*` | Admin overview, user list, chart data, top streaks, retention rate |
 
 ### 2. innerlog-ai-engine (AI Service)
 

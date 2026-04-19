@@ -7,14 +7,39 @@
   </div>
 </div>
 
+<!-- Date Filter -->
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Từ ngày</label>
+        <input type="date" class="form-control" [(ngModel)]="fromDate">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Đến ngày</label>
+        <input type="date" class="form-control" [(ngModel)]="toDate">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary me-2" (click)="loadCheckins()">🔍 Lọc</button>
+        <button class="btn btn-outline-secondary" (click)="clearFilter()">Xóa bộ lọc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Table -->
 <div class="main-card mb-3 card">
   <div class="card-body">
-    <table class="table table-hover table-striped">
+    <div *ngIf="loading" class="text-center py-4">
+      <div class="spinner-border text-primary" role="status"></div>
+    </div>
+    <table class="table table-hover table-striped" *ngIf="!loading">
       <thead>
         <tr>
           <th>Ngày</th>
           <th>Mood</th>
           <th>Energy</th>
+          <th>Tags</th>
           <th>Ghi chú</th>
         </tr>
       </thead>
@@ -23,7 +48,14 @@
           <td>{{ c.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ moodEmoji(c.mood_score) }} {{ c.mood_score }}/5</td>
           <td><span class="badge" [ngClass]="{'bg-danger': c.energy_level === 'low', 'bg-warning': c.energy_level === 'normal', 'bg-success': c.energy_level === 'high'}">{{ c.energy_level }}</span></td>
+          <td>
+            <span class="badge bg-info me-1" *ngFor="let tag of c.tags">{{ tag }}</span>
+            <span *ngIf="!c.tags || c.tags.length === 0">—</span>
+          </td>
           <td>{{ c.text_note || '—' }}</td>
+        </tr>
+        <tr *ngIf="checkins.length === 0">
+          <td colspan="5" class="text-center text-muted py-4">Không có dữ liệu check-in</td>
         </tr>
       </tbody>
     </table>

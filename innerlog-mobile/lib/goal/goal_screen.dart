@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import '../core/api.dart';
+import '../core/l10n/app_localizations.dart';
 
 class GoalScreen extends StatefulWidget {
   const GoalScreen({super.key});
@@ -20,9 +20,10 @@ class _GoalScreenState extends State<GoalScreen> {
   }
 
   Future<void> _loadGoals() async {
+    setState(() => _loading = true);
     try {
       final res = await _api.getGoals();
-      setState(() { _goals = res.data; _loading = false; });
+      setState(() { _goals = (res.data is List) ? res.data : []; _loading = false; });
     } catch (e) {
       setState(() { _loading = false; });
     }
@@ -31,107 +32,111 @@ class _GoalScreenState extends State<GoalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mục tiêu')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _goals.isEmpty
-              ? const Center(child: Text('Chưa có mục tiêu nào'))
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _goals.length,
-                  itemBuilder: (_, i) {
-                    final g = _goals[i];
-                    return Card(
-                      child: ExpansionTile(
-                        title: Text(g['title']),
-                        subtitle: Row(children: [
-                          Chip(label: Text(g['category'] ?? 'other')),
-                          const SizedBox(width: 8),
-                          Text('${g['progress'] ?? 0}%'),
-                        ]),
-                        trailing: SizedBox(
-                          width: 40, height: 40,
-                          child: CircularProgressIndicator(value: (g['progress'] ?? 0) / 100, strokeWidth: 4),
-                        ),
-                        children: [
-                          if (g['tasks'] != null)
-                            ...List.generate((g['tasks'] as List).length, (ti) {
-                              final task = g['tasks'][ti];
-                              return CheckboxListTile(
-                                title: Text(task['title'], style: TextStyle(
-                                  decoration: task['done'] == true ? TextDecoration.lineThrough : null,
-                                )),
-                                value: task['done'] == true,
-                                onChanged: (_) async {
-                                  await _api.toggleTask(g['_id'], ti);
-                                  _loadGoals();
-                                },
-                              );
-                            }),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: Row(children: [
-                              Expanded(child: TextField(
-                                decoration: const InputDecoration(hintText: 'Thêm task...', isDense: true),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).goals)),
+      body: RefreshIndicator(
+        onRefresh: _loadGoals,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _goals.isEmpty
+                ? ListView(children: [
+                    const SizedBox(height: 120),
+                    Center(child: Column(children: [
+                      const Text('🎯', style: TextStyle(fontSize: 64)),
+                      const SizedBox(height: 12),
+                      Text(AppLocalizations.of(context).noGoals, style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 4),
+                      Text(AppLocalizations.of(context).createFirstGoal, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                    ])),
+                  ])
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _goals.length,
+                    itemBuilder: (_, i) {
+                      final g = _goals[i];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ExpansionTile(
+                          title: Text(g['title'] ?? ''),
+                          subtitle: Row(children: [
+                            Chip(label: Text(g['category'] ?? 'other')),
+                            const SizedBox(width: 8),
+                            Text('${g['progress'] ?? 0}%'),
+                          ]),
+                          trailing: SizedBox(
+                            width: 40, height: 40,
+                            child: CircularProgressIndicator(value: (g['progress'] ?? 0) / 100, strokeWidth: 4),
+                          ),
+                          children: [
+                            if (g['tasks'] != null)
+                              ...List.generate((g['tasks'] as List).length, (ti) {
+                                final task = g['tasks'][ti];
+                                return CheckboxListTile(
+                                  title: Text(task['title'] ?? '', style: TextStyle(
+                                    decoration: task['done'] == true ? TextDecoration.lineThrough : null,
+                                  )),
+                                  value: task['done'] == true,
+                                  onChanged: (_) async {
+                                    await _api.toggleTask(g['_id'], ti);
+                                    _loadGoals();
+                                  },
+                                );
+                              }),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: TextField(
+                                decoration: const InputDecoration(hintText: 'Add task...', isDense: true, border: OutlineInputBorder()),
                                 onSubmitted: (v) async {
                                   if (v.isNotEmpty) {
                                     await _api.addTask(g['_id'], v);
                                     _loadGoals();
                                   }
                                 },
-                              )),
-                            ]),
-                          ),
-                        ],
-                      ),
-                    );
-                    });
-                  },
-                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddGoal(context),
         child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 2,
-        onDestinationSelected: (i) {
-          final routes = ['/checkin', '/insights', '/goals', '/profile'];
-          context.go(routes[i]);
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.mood), label: 'Check-in'),
-          NavigationDestination(icon: Icon(Icons.insights), label: 'Insights'),
-          NavigationDestination(icon: Icon(Icons.flag), label: 'Goals'),
-          NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
-        ],
       ),
     );
   }
 
   void _showAddGoal(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final titleCtrl = TextEditingController();
     String category = 'other';
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (_) => Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          TextField(controller: titleCtrl, decoration: const InputDecoration(labelText: 'Tên mục tiêu')),
+          TextField(controller: titleCtrl, decoration: InputDecoration(labelText: l.goalName, border: const OutlineInputBorder())),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: category,
             items: ['study', 'work', 'health', 'finance', 'other'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (v) => category = v ?? 'other',
-            decoration: const InputDecoration(labelText: 'Loại'),
+            decoration: InputDecoration(labelText: l.goalCategory, border: const OutlineInputBorder()),
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: () async {
-              await _api.createGoal(titleCtrl.text, category);
-              if (mounted) Navigator.pop(context);
-              _loadGoals();
-            },
-            child: const Text('Tạo mục tiêu'),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () async {
+                if (titleCtrl.text.isNotEmpty) {
+                  await _api.createGoal(titleCtrl.text, category);
+                  if (mounted) Navigator.pop(context);
+                  _loadGoals();
+                }
+              },
+              child: Text(l.createGoal),
+            ),
           ),
         ]),
       ),

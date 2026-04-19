@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
+import { body, query } from 'express-validator';
 import { Checkin, Streak } from '../models';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 
 const router = Router();
 
@@ -40,7 +42,13 @@ async function updateStreak(userId: string) {
 }
 
 // POST /api/v1/checkins
-router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.post('/',
+  authMiddleware,
+  body('mood_score').isInt({ min: 1, max: 5 }).withMessage('Mood phải từ 1-5'),
+  body('energy_level').isIn(['low', 'normal', 'high']).withMessage('Energy phải là low/normal/high'),
+  body('text_note').optional().isString().isLength({ max: 500 }),
+  validate,
+  async (req: AuthRequest, res: Response) => {
   try {
     const { mood_score, energy_level, text_note, tags } = req.body;
     const checkin = new Checkin({ user_id: req.userId, mood_score, energy_level, text_note, tags });
@@ -52,18 +60,24 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// GET /api/v1/checkins?from=&to=
+// GET /api/v1/checkins?from=&to=&page=1&limit=50
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const { from, to } = req.query;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
+    const skip = (page - 1) * limit;
     const filter: any = { user_id: req.userId };
     if (from || to) {
       filter.created_at = {};
       if (from) filter.created_at.$gte = new Date(from as string);
       if (to) filter.created_at.$lte = new Date(to as string);
     }
-    const checkins = await Checkin.find(filter).sort({ created_at: -1 });
-    res.json(checkins);
+    const [checkins, total] = await Promise.all([
+      Checkin.find(filter).sort({ created_at: -1 }).skip(skip).limit(limit),
+      Checkin.countDocuments(filter),
+    ]);
+    res.json({ data: checkins, total, page, limit, hasMore: skip + checkins.length < total });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

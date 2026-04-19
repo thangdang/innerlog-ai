@@ -28,13 +28,13 @@ class AnalyzeResponse(BaseModel):
 async def analyze(req: AnalyzeRequest):
     checkins = [c.model_dump() for c in req.checkins]
 
-    # Step 1: Sentiment analysis
+    # Step 1: Sentiment analysis (sync — ML model)
     sentiments = analyze_sentiment(checkins)
 
-    # Step 2: Topic clustering
+    # Step 2: Topic clustering (sync — ML model)
     topics = cluster_topics(checkins)
 
-    # Step 3: Generate insight bullets
-    bullets, metrics = generate_insight_bullets(checkins, sentiments, topics)
+    # Step 3: Generate insight bullets (async — may call Ollama LLM)
+    bullets, metrics = await generate_insight_bullets(checkins, sentiments, topics)
 
     return AnalyzeResponse(bullets=bullets, metrics=metrics)

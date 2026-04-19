@@ -11,8 +11,13 @@ export interface IUser extends Document {
   timezone: string;
   language: string;
   plan: 'free' | 'premium';
+  role: 'user' | 'admin';
   reminder_enabled: boolean;
   reminder_time?: string;
+  theme: 'light' | 'dark' | 'system';
+  notify_coach: boolean;
+  notify_reminder: boolean;
+  notify_insight: boolean;
   created_at: Date;
   comparePassword(password: string): Promise<boolean>;
 }
@@ -27,8 +32,13 @@ const userSchema = new Schema<IUser>({
   timezone: { type: String, default: 'Asia/Ho_Chi_Minh' },
   language: { type: String, default: 'vi' },
   plan: { type: String, enum: ['free', 'premium'], default: 'free' },
+  role: { type: String, enum: ['user', 'admin'], default: 'user' },
   reminder_enabled: { type: Boolean, default: true },
   reminder_time: { type: String, default: '21:00' },
+  theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
+  notify_coach: { type: Boolean, default: true },
+  notify_reminder: { type: Boolean, default: true },
+  notify_insight: { type: Boolean, default: true },
   created_at: { type: Date, default: Date.now },
 });
 
