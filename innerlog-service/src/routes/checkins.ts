@@ -41,6 +41,57 @@ async function updateStreak(userId: string) {
   return streak;
 }
 
+/**
+ * @swagger
+ * /checkins:
+ *   post:
+ *     summary: Create a new check-in
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mood_score
+ *               - energy_level
+ *             properties:
+ *               mood_score:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *               energy_level:
+ *                 type: string
+ *                 enum: [low, normal, high]
+ *               text_note:
+ *                 type: string
+ *                 maxLength: 500
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Check-in created with updated streak
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 checkin:
+ *                   $ref: '#/components/schemas/Checkin'
+ *                 streak:
+ *                   $ref: '#/components/schemas/Streak'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/checkins
 router.post('/',
   authMiddleware,
@@ -60,6 +111,67 @@ router.post('/',
   }
 });
 
+/**
+ * @swagger
+ * /checkins:
+ *   get:
+ *     summary: Get check-ins with pagination and date filtering
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: from
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date filter
+ *       - in: query
+ *         name: to
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date filter
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *           maximum: 100
+ *         description: Items per page
+ *     responses:
+ *       200:
+ *         description: Paginated list of check-ins
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Checkin'
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *                 hasMore:
+ *                   type: boolean
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/checkins?from=&to=&page=1&limit=50
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -83,6 +195,61 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /checkins/{id}:
+ *   put:
+ *     summary: Update a check-in
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Check-in ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               mood_score:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *               energy_level:
+ *                 type: string
+ *                 enum: [low, normal, high]
+ *               text_note:
+ *                 type: string
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: Updated check-in
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Checkin'
+ *       404:
+ *         description: Check-in not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // PUT /api/v1/checkins/:id
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -98,6 +265,44 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /checkins/{id}:
+ *   delete:
+ *     summary: Delete a check-in
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Check-in ID
+ *     responses:
+ *       200:
+ *         description: Check-in deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Check-in not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // DELETE /api/v1/checkins/:id
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -109,6 +314,28 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 });
 
+/**
+ * @swagger
+ * /checkins/streak:
+ *   get:
+ *     summary: Get current streak information
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current streak data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Streak'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/checkins/streak — current streak info
 router.get('/streak', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -119,6 +346,44 @@ router.get('/streak', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 });
 
+/**
+ * @swagger
+ * /checkins/heatmap:
+ *   get:
+ *     summary: Get mood heatmap data for a year (365 days)
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Year to get heatmap for (defaults to current year)
+ *     responses:
+ *       200:
+ *         description: Daily mood averages for heatmap
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   date:
+ *                     type: string
+ *                     format: date
+ *                   avg_mood:
+ *                     type: number
+ *                   count:
+ *                     type: integer
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/checkins/heatmap?year=2026 — mood heatmap data (365 days)
 router.get('/heatmap', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -149,6 +414,61 @@ router.get('/heatmap', authMiddleware, async (req: AuthRequest, res: Response) =
   }
 });
 
+/**
+ * @swagger
+ * /checkins/stats:
+ *   get:
+ *     summary: Get mood trends and statistics for charts
+ *     tags: [Checkins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: days
+ *         schema:
+ *           type: integer
+ *           default: 30
+ *         description: Number of days to include in stats
+ *     responses:
+ *       200:
+ *         description: Mood trends and energy distribution
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 moodTrend:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                       avg:
+ *                         type: number
+ *                 energyDist:
+ *                   type: object
+ *                   properties:
+ *                     low:
+ *                       type: integer
+ *                     normal:
+ *                       type: integer
+ *                     high:
+ *                       type: integer
+ *                 avgMood:
+ *                   type: number
+ *                 totalCheckins:
+ *                   type: integer
+ *                 days:
+ *                   type: integer
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/checkins/stats — trends & stats for charts
 router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

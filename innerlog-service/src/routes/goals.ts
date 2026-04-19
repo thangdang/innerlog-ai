@@ -6,6 +6,52 @@ import { validate } from '../middleware/validate';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /goals:
+ *   post:
+ *     summary: Create a new goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *                 maxLength: 200
+ *               category:
+ *                 type: string
+ *                 enum: [study, work, health, finance, other]
+ *               tasks:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                     done:
+ *                       type: boolean
+ *     responses:
+ *       201:
+ *         description: Goal created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Goal'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/goals
 router.post('/',
   authMiddleware,
@@ -23,6 +69,37 @@ router.post('/',
   }
 });
 
+/**
+ * @swagger
+ * /goals:
+ *   get:
+ *     summary: Get all goals with optional status filter
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [active, completed, abandoned]
+ *         description: Filter by goal status
+ *     responses:
+ *       200:
+ *         description: List of goals
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Goal'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/goals
 router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -36,6 +113,56 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /goals/{id}:
+ *   put:
+ *     summary: Update a goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Goal ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *                 enum: [study, work, health, finance, other]
+ *               status:
+ *                 type: string
+ *                 enum: [active, completed, abandoned]
+ *     responses:
+ *       200:
+ *         description: Updated goal
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Goal'
+ *       404:
+ *         description: Goal not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // PUT /api/v1/goals/:id
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -51,6 +178,53 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /goals/{id}/tasks/{taskIndex}/toggle:
+ *   put:
+ *     summary: Toggle a micro-task done status within a goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Goal ID
+ *       - in: path
+ *         name: taskIndex
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Index of the task to toggle
+ *     responses:
+ *       200:
+ *         description: Goal with updated task status and progress
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Goal'
+ *       400:
+ *         description: Invalid task index
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Goal not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // PUT /api/v1/goals/:id/tasks/:taskIndex/toggle — toggle micro-task done
 router.put('/:id/tasks/:taskIndex/toggle', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -74,6 +248,52 @@ router.put('/:id/tasks/:taskIndex/toggle', authMiddleware, async (req: AuthReque
   }
 });
 
+/**
+ * @swagger
+ * /goals/{id}/tasks:
+ *   post:
+ *     summary: Add a micro-task to a goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Goal ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *             properties:
+ *               title:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Goal with new task added
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Goal'
+ *       404:
+ *         description: Goal not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/goals/:id/tasks — add micro-task to goal
 router.post('/:id/tasks', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -92,6 +312,44 @@ router.post('/:id/tasks', authMiddleware, async (req: AuthRequest, res: Response
   }
 });
 
+/**
+ * @swagger
+ * /goals/{id}:
+ *   delete:
+ *     summary: Delete a goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Goal ID
+ *     responses:
+ *       200:
+ *         description: Goal deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       404:
+ *         description: Goal not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // DELETE /api/v1/goals/:id
 router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

@@ -8,6 +8,28 @@ import { getCached, setCache } from '../services/cache';
 const router = Router();
 const COACH_CACHE_TTL = 60 * 60; // 1h — coach patterns change with new checkins
 
+/**
+ * @swagger
+ * /coach/check:
+ *   post:
+ *     summary: Run silent coach analysis on recent check-ins
+ *     tags: [Coach]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Coach analysis result with alerts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CoachResponse'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/coach/check — run silent coach analysis
 router.post('/check', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

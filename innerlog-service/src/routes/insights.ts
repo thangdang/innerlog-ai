@@ -10,6 +10,45 @@ import { getCached, setCache } from '../services/cache';
 const router = Router();
 const INSIGHT_CACHE_TTL = 6 * 60 * 60; // 6h — weekly data, regenerate daily at most
 
+/**
+ * @swagger
+ * /insights/generate:
+ *   post:
+ *     summary: Generate AI-powered insights from check-ins
+ *     tags: [Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               period:
+ *                 type: string
+ *                 enum: [7d, 30d, 60d, 90d]
+ *                 default: 7d
+ *     responses:
+ *       201:
+ *         description: Insight generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Insight'
+ *       400:
+ *         description: No check-ins found for this period
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/insights/generate
 router.post('/generate',
   authMiddleware,
@@ -96,6 +135,28 @@ router.post('/generate',
   }
 });
 
+/**
+ * @swagger
+ * /insights/latest:
+ *   get:
+ *     summary: Get the latest insight for the current user
+ *     tags: [Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Latest insight or empty object
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Insight'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/insights/latest
 router.get('/latest', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -106,6 +167,43 @@ router.get('/latest', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 });
 
+/**
+ * @swagger
+ * /insights/history:
+ *   get:
+ *     summary: Get insight history with optional period filter
+ *     tags: [Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema:
+ *           type: string
+ *           enum: [7d, 30d, 60d, 90d]
+ *         description: Filter by period
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum number of insights to return
+ *     responses:
+ *       200:
+ *         description: List of insights
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Insight'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/insights/history
 router.get('/history', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -121,6 +219,83 @@ router.get('/history', authMiddleware, async (req: AuthRequest, res: Response) =
   }
 });
 
+/**
+ * @swagger
+ * /insights/compare:
+ *   get:
+ *     summary: Compare two insight periods
+ *     tags: [Insights]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id1
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: First insight ID
+ *       - in: query
+ *         name: id2
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Second insight ID
+ *     responses:
+ *       200:
+ *         description: Comparison of two insight periods
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 period1:
+ *                   type: object
+ *                   properties:
+ *                     period:
+ *                       type: string
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     meta:
+ *                       type: object
+ *                 period2:
+ *                   type: object
+ *                   properties:
+ *                     period:
+ *                       type: string
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     meta:
+ *                       type: object
+ *                 changes:
+ *                   type: object
+ *                   properties:
+ *                     mood_change:
+ *                       type: number
+ *                     stress_improved:
+ *                       type: boolean
+ *                     positive_change:
+ *                       type: number
+ *       400:
+ *         description: Missing id1 or id2
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Insight not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/insights/compare?id1=&id2= — compare two insight periods
 router.get('/compare', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

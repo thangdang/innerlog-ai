@@ -15,6 +15,57 @@ function generateTokens(userId: string, role: string = 'user') {
   return { token, refreshToken };
 }
 
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user account
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *               display_name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *       400:
+ *         description: Email already registered or validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/auth/register
 router.post('/register',
   body('email').isEmail().withMessage('Email không hợp lệ'),
@@ -36,6 +87,54 @@ router.post('/register',
   }
 });
 
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login with email and password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 token:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/auth/login
 router.post('/login',
   body('email').isEmail().withMessage('Email không hợp lệ'),
@@ -55,6 +154,42 @@ router.post('/login',
   }
 });
 
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token using refresh token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: New tokens generated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *       401:
+ *         description: Invalid refresh token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/auth/refresh
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
@@ -67,6 +202,34 @@ router.post('/refresh', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current authenticated user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/auth/me
 router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -78,6 +241,66 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/profile:
+ *   put:
+ *     summary: Update user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               display_name:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *               age:
+ *                 type: integer
+ *               gender:
+ *                 type: string
+ *               timezone:
+ *                 type: string
+ *               language:
+ *                 type: string
+ *               reminder_enabled:
+ *                 type: boolean
+ *               reminder_time:
+ *                 type: string
+ *               theme:
+ *                 type: string
+ *                 enum: [light, dark]
+ *               notify_coach:
+ *                 type: boolean
+ *               notify_reminder:
+ *                 type: boolean
+ *               notify_insight:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // PUT /api/v1/auth/profile — update profile
 router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -94,6 +317,57 @@ router.put('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
   }
 });
 
+/**
+ * @swagger
+ * /auth/change-password:
+ *   post:
+ *     summary: Change current user password
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - current_password
+ *               - new_password
+ *             properties:
+ *               current_password:
+ *                 type: string
+ *               new_password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Current password is incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/auth/change-password
 router.post('/change-password', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -111,6 +385,41 @@ router.post('/change-password', authMiddleware, async (req: AuthRequest, res: Re
   }
 });
 
+/**
+ * @swagger
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request password reset token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Reset link sent if email exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // POST /api/v1/auth/forgot-password — generate reset token (simplified)
 router.post('/forgot-password', async (req: Request, res: Response) => {
   try {
@@ -126,6 +435,49 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * @swagger
+ * /auth/export:
+ *   get:
+ *     summary: Export all user data (GDPR compliance)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All user data exported
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 checkins:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Checkin'
+ *                 insights:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Insight'
+ *                 goals:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Goal'
+ *                 notifications:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Notification'
+ *                 streak:
+ *                   $ref: '#/components/schemas/Streak'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/auth/export — export all user data (GDPR)
 router.get('/export', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
@@ -142,6 +494,31 @@ router.get('/export', authMiddleware, async (req: AuthRequest, res: Response) =>
   }
 });
 
+/**
+ * @swagger
+ * /auth/delete-account:
+ *   delete:
+ *     summary: Permanently delete account and all associated data
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account and all data deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // DELETE /api/v1/auth/delete-account — hard delete all data
 router.delete('/delete-account', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {

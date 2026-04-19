@@ -4,6 +4,49 @@ import { authMiddleware, requireAdmin, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /dashboard:
+ *   get:
+ *     summary: Get admin dashboard overview statistics
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard overview with key metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalUsers:
+ *                   type: integer
+ *                 premiumUsers:
+ *                   type: integer
+ *                 newUsersWeek:
+ *                   type: integer
+ *                 activeUsers:
+ *                   type: integer
+ *                 retentionRate:
+ *                   type: integer
+ *                 totalCheckins:
+ *                   type: integer
+ *                 checkinsToday:
+ *                   type: integer
+ *                 totalInsights:
+ *                   type: integer
+ *                 totalGoals:
+ *                   type: integer
+ *                 avgMoodWeek:
+ *                   type: number
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/dashboard — admin overview
 router.get('/', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
@@ -53,6 +96,58 @@ router.get('/', authMiddleware, requireAdmin, async (req: AuthRequest, res: Resp
   }
 });
 
+/**
+ * @swagger
+ * /dashboard/users:
+ *   get:
+ *     summary: Get paginated user list for admin
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Items per page
+ *       - in: query
+ *         name: plan
+ *         schema:
+ *           type: string
+ *           enum: [free, premium]
+ *         description: Filter by user plan
+ *     responses:
+ *       200:
+ *         description: Paginated user list
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/dashboard/users — user list for admin
 router.get('/users', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
@@ -70,6 +165,49 @@ router.get('/users', authMiddleware, requireAdmin, async (req: AuthRequest, res:
   }
 });
 
+/**
+ * @swagger
+ * /dashboard/chart:
+ *   get:
+ *     summary: Get daily signups and check-ins chart data
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: days
+ *         schema:
+ *           type: integer
+ *           default: 30
+ *         description: Number of days to include
+ *     responses:
+ *       200:
+ *         description: Chart data with labels, signups, and check-ins arrays
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 labels:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                     format: date
+ *                 signups:
+ *                   type: array
+ *                   items:
+ *                     type: integer
+ *                 checkins:
+ *                   type: array
+ *                   items:
+ *                     type: integer
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/dashboard/chart — daily signups & checkins for last 30 days
 router.get('/chart', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
@@ -111,6 +249,30 @@ router.get('/chart', authMiddleware, requireAdmin, async (req: AuthRequest, res:
   }
 });
 
+/**
+ * @swagger
+ * /dashboard/streaks:
+ *   get:
+ *     summary: Get top streaks leaderboard
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Top 20 streaks with user info
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Streak'
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // GET /api/v1/dashboard/streaks — top streaks leaderboard
 router.get('/streaks', authMiddleware, requireAdmin, async (req: AuthRequest, res: Response) => {
   try {
